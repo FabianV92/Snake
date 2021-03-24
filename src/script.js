@@ -1,155 +1,236 @@
 "use strict";
 
 
+/****************************************************************************
+ *                                 MODEL                                    *
+ ****************************************************************************/
 class Model {
+    view = new View();
 
-    constructor() {
-        this.rndNumbX = 300;
-        this.rndNumbY = 300;
-    }
-
-    // Selecting Elements
-    canvasEl = document.querySelector("canvas");
-    ctx = this.canvasEl.getContext("2d");
-
-    // Draw and clear the snake
-    drawSnake = function (x, y, w, h) {
-        this.ctx.fillStyle = "#78c479";
-        this.ctx.fillRect(x, y, w, h);
-    }
-    clearSnake = function (x, y, w, h) {
-        this.ctx.clearRect(x, y, w, h);
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
     }
 
-    // Draw and clear food
-    drawFood = function (x, y, w, h) {
-        this.ctx.fillStyle = "#c84f59";
-        this.ctx.fillRect(x, y, w, h);
-    }
-    clearFood = function (x, y, w, h) {
-        this.ctx.clearRect(x, y, w, h);
-    }
+    speed = 7;
+    tileCount = 20;
+    tileSize = this.view.canvasEl.width / this.tileCount - 2;
 
-    // Draw new snake segment
-    drawNewSegment = function (x, y, w, h) {
-        this.ctx.fillStyle = "#78c479";
-        this.ctx.fillRect(x,y,w,h)
-    }
+    headX = 10;
+    headY = 10;
+    snakeParts = [];
+    tailLength = 2;
 
-    // Create randomly food via math.random method
-    createRndFood = () => {
-        this.rndNumbX = (Math.trunc(Math.random() * 450) + 1);
-        this.rndNumbY = (Math.trunc(Math.random() * 450) + 1);
-    }
+    appleX = 5;
+    appleY = 5;
+
+    xVelocity = 0;
+    yVelocity = 0;
+
+    score = 0;
+
 }
 
-
+/****************************************************************************
+ *                                 VIEW                                     *
+ ****************************************************************************/
 class View {
+    canvasEl = document.querySelector(".canvas");
+    htmlEl = document.querySelector("html");
+    bodyEl = document.querySelector("body");
+    ctx = this.canvasEl.getContext('2d');
 
-    constructor(width, height) {
-        this.width = width;
-        this.height = height;
+
+    windowInit = () => {
+        this.canvasEl.width = 400;
+        this.canvasEl.height = 400;
+        this.htmlEl.style.cssText = "width: 100%; height: 100%;"
+        this.bodyEl.style.cssText = "width: 100%; height: 100%; " +
+            "background: url(../pictures/background.png) no-repeat center center fixed ; " +
+            "display: flex; background-size: cover; justify-content: center; align-items: center; " +
+            "overflow: hidden;"
+
     }
 
-    windowSettings = function () {
-        const bodyEl = document.querySelector("body");
-        const htmlEl = document.querySelector("html");
-        const canvasEl = document.querySelector(".canvas");
-        htmlEl.style.cssText = "padding: 0px; margin: 0px;"
-        bodyEl.style.cssText = "display: flex; justify-content: center;" +
-            " align-items: center; width: 100vw; height: 100vh overflow: hidden;";
-        canvasEl.style.cssText = "Background-Color: white; overflow: hidden";
-        bodyEl.style.backgroundColor = "black";
-        canvasEl.width = window.innerWidth = this.width;
-        canvasEl.height = window.innerHeight = this.height;
-    }
 }
 
+/****************************************************************************
+ *                                 CONTROLLER                               *
+ ****************************************************************************/
 
 class Controller {
 
-    constructor() {
-        this.x = 200;
-        this.y = 200;
-        this.w = 25;
-        this.h = 25;
+    modelData = new Model(this);
+    view = new View();
+
+    isGameOver = () => {
+
+        let gameOver = false;
+
+        if (this.modelData.yVelocity === 0 && this.modelData.xVelocity === 0) {
+            return false;
+        }
+
+        //walls
+        if (this.modelData.headX < 0) {
+            gameOver = true;
+        } else if (this.modelData.headX === this.modelData.tileCount) {
+            gameOver = true
+        } else if (this.modelData.headY < 0) {
+            gameOver = true;
+        } else if (this.modelData.headY === this.modelData.tileCount) {
+            gameOver = true
+        }
+
+        for (let i = 0; i < this.modelData.snakeParts.length; i++) {
+            let part = this.modelData.snakeParts[i];
+            if (part.x === this.modelData.headX && part.y === this.modelData.headY) {
+                gameOver = true;
+                break;
+            }
+        }
+
+
+        if (gameOver) {
+            this.view.ctx.fillStyle = "white";
+            this.view.ctx.font = "50px monospace";
+
+            this.view.ctx.fillText("Game Over!", this.view.canvasEl.width / 6.5, this.view.canvasEl.height / 2);
+        }
+
+        return gameOver;
     }
 
-    snake = new Model(this);
-    snakeGrow = new Model(this);
-    moveX = 0;
-    moveY = 0;
+    drawScore = () => {
 
-    snakeControl = () => {
-        requestAnimationFrame(this.snakeControl);
+        this.view.ctx.fillStyle = "white";
+        this.view.ctx.font = "15px monospace"
+        this.view.ctx.fillText("Current score " + this.modelData.score, this.view.canvasEl.width - 275, 20);
+    }
 
-        // Safety checks an resets position if snake leaves the canvas WILL BE changed!!!!!!
-        this.y = this.y > window.innerHeight ? (window.innerHeight - window.innerHeight) - 20 : this.y;
-        this.y = this.y < window.innerHeight - window.innerHeight - 20 ? window.innerHeight : this.y;
-        this.x = this.x > window.innerWidth ? (window.innerWidth - window.innerWidth) - 20 : this.x;
-        this.x = this.x < window.innerWidth - window.innerWidth - 20 ? window.innerWidth : this.x;
+    clearScreen = () => {
+        this.view.ctx.fillStyle = 'black';
+        this.view.ctx.fillRect(0, 0, this.view.canvasEl.width, this.view.canvasEl.height);
+    }
 
-        // Cleaning last position and drawing the snake
-        this.snake.clearSnake(0, 0, this.x, this.y);
-        this.snake.drawSnake(this.x, this.y, 25, 25);
-
-        // If food got eaten by snake generates new food and generates new segment of the snake (let the snake grow)
-        if (this.x < (this.snake.rndNumbX + 20) && this.x > this.snake.rndNumbX - 20 &&
-            this.y < this.snake.rndNumbY + 20 && this.y > this.snake.rndNumbY - 20) {
-            this.snake.clearFood(this.snake.rndNumbX, this.snake.rndNumbY, window.innerWidth, window.innerHeight);
-            this.snake.createRndFood();
-
-        // Adding new segment to the snake
-
-            this.snakeGrow.drawNewSegment(250,250,this.h,this.w);
-
+    drawSnake = () => {
+        this.view.ctx.fillStyle = `#55de65`;
+        for (let i = 0; i < this.modelData.snakeParts.length; i++) {
+            let part = this.modelData.snakeParts[i];
+            this.view.ctx.fillRect(part.x * this.modelData.tileCount, part.y * this.modelData.tileCount,
+                this.modelData.tileSize, this.modelData.tileSize);
         }
-        this.snake.drawFood(this.snake.rndNumbX, this.snake.rndNumbY, 25, 25);
 
-        // Controls via switch case, using arrow keys
-        window.addEventListener("keydown", (e) => {
-            switch (e.key) {
-                case  "ArrowRight" : {
-                    this.moveX = 3;
-                    this.moveY = 0;
-                    break;
-                }
-                case  "ArrowLeft" : {
-                    this.moveX = -3;
-                    this.moveY = 0;
-                    break;
-                }
-                case "ArrowUp" : {
-                    this.moveX = 0;
-                    this.moveY = -3;
-                    break;
-                }
-                case "ArrowDown" : {
-                    this.moveX = 0;
-                    this.moveY = 3;
-                    break;
-                }
+        this.modelData.snakeParts.push(new Model(this.modelData.headX, this.modelData.headY)); //put an item at the end of the list next to the head
+        while (this.modelData.snakeParts.length > this.modelData.tailLength) {
+            this.modelData.snakeParts.shift(); // remove the furthet item from the snake parts if have more than our tail size.
+        }
+
+        const rndNumber = () => Math.trunc(Math.random()*255);
+        this.view.ctx.fillStyle = `rgb(${rndNumber()},${rndNumber()},${rndNumber()})`;
+        this.view.ctx.fillRect(this.modelData.headX * this.modelData.tileCount, this.modelData.headY * this.modelData.tileCount,
+            this.modelData.tileSize, this.modelData.tileSize);
+
+
+    }
+
+    changeSnakePosition = () => {
+        this.modelData.headX = this.modelData.headX + this.modelData.xVelocity;
+        this.modelData.headY = this.modelData.headY + this.modelData.yVelocity;
+    }
+
+    drawApple = () => {
+        this.view.ctx.fillStyle = "red";
+        this.view.ctx.fillRect(this.modelData.appleX * this.modelData.tileCount, this.modelData.appleY * this.modelData.tileCount,
+            this.modelData.tileSize, this.modelData.tileSize)
+    }
+
+    checkAppleCollision = () => {
+        if (this.modelData.appleX === this.modelData.headX && this.modelData.appleY == this.modelData.headY) {
+            this.modelData.appleX = Math.floor(Math.random() * this.modelData.tileCount);
+            this.modelData.appleY = Math.floor(Math.random() * this.modelData.tileCount);
+            this.modelData.tailLength++;
+            this.modelData.score++;
+        }
+    }
+
+     /*Drawing the game with calling methods and update them on 1000/current speed
+     The higher the current score, the higher (quicker) the the loop is running, which makes
+     the game more difficult*/
+
+    updateLoop = () => {
+        this.changeSnakePosition();
+        let result = this.isGameOver();
+        if (result) {
+            return;
+        }
+        this.view.windowInit();
+        this.clearScreen();
+        this.checkAppleCollision();
+        this.drawApple();
+        this.drawSnake();
+        this.drawScore();
+
+        if (this.modelData.score > 5) {
+            this.modelData.speed = 9;
+        }
+        if (this.modelData.score > 10) {
+            this.modelData.speed = 11;
+        }
+
+        setTimeout(this.updateLoop, 1000 / this.modelData.speed);
+    }
+
+
+    snakeKeyController = () => {
+        document.body.addEventListener('keydown', (e) => {
+            // Up
+            if (e.key == "ArrowUp") {
+                console.log("up");
+                if (this.modelData.yVelocity == 1)
+                    return;
+                this.modelData.yVelocity = -1;
+                this.modelData.xVelocity = 0;
+            }
+
+            // Down
+            if (e.key == "ArrowDown") {
+                console.log("down");
+                if (this.modelData.yVelocity == -1)
+                    return;
+                this.modelData.yVelocity = 1;
+                this.modelData.xVelocity = 0;
+            }
+
+            // Left
+            if (e.key == "ArrowLeft") {
+                console.log("left");
+                if (this.modelData.xVelocity == 1)
+                    return;
+                this.modelData.yVelocity = 0;
+                this.modelData.xVelocity = -1;
+            }
+
+            // Right
+            if (e.key == "ArrowRight") {
+                console.log("right");
+                if (this.modelData.xVelocity == -1)
+                    return;
+                this.modelData.yVelocity = 0;
+                this.modelData.xVelocity = 1;
             }
         })
-        this.x += this.moveX , this.y += this.moveY;
+
     }
 }
 
-
+// Main method calling itself and initializing the game
 const main = function () {
-    const window = new View(500, 500);
-    window.windowSettings();
-    const snakeControll = new Controller();
-    snakeControll.snakeControl();
+    // Declaring an initializing
+    const init = new Controller();
 
-
-}();
-
-
-
-
-
-
-
-
+    // Calling methods
+    init.updateLoop();
+    init.snakeKeyController();
+}();// <-- calling itself
 
