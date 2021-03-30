@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>snake</title>
+    <style>
+        .hide {
+            display: none;
+        }
+    </style>
+    <script src="script.js"></script>
+</head>
+<body>
+<div class="hide"></div>
+<button>Help</button>
+<div class="infoDiv hide">
+    <img class="closeIcon" src="images/extImg.png" alt="An exit icon"/>
+    <h1>How to play snake?</h1>
+    <p>The user controls a snake which continuously moves in the direction its’ head is facing.
+        If the snake runs into one of the outer boundary walls or its’ own body, it will result in fatal injury to
+        the snake and the player will lose the game as a result. An apple will always be spawned on the map, at a
+        randomly generated location. The snake can eat apples by running over them. When the snake eats the apple
+        that is on the map, the snake will grow 1 unit longer and another apple will appear in another randomly
+        generated location. The goal of the game is to control the snake in such a way that it eats as many apples
+        as possible (the snake grows as long as possible) without dying. This gets harder the larger the snake
+        gets, because there will be less available space for the snake to move in its’ environment, so the game
+        gets very strategic as the snake approaches longer lengths. <br>
+    </p>
+    <br>
+    <img class="arrowKeysImg" src="images/arrowKeys.png" alt="An image of the three arrow keys"/>
+    <h3>Controls!</h3>
+    <p>Up arrow Snake’s head will face upward.<br>
+        Down arrow Snake’s head will face downward.<br>
+        Left arrow Snake’s head will face to the left. <br>
+        Right arrow Snake’s head will face to the right.<br>
+        Note: The snake cannot instantly turn backwards, it must go around in a semi circle.
+        (The snake cannot backtrack over its body)</p>
+</div>
+<canvas></canvas>
+</body>
+</html>
